@@ -36,21 +36,22 @@ export class ContractManagementService {
   }
 
   async getAllContracts(): Promise<IContract[]> {
-    const contractData = await this.contractModel.find();
+    const contractData = await this.contractModel.find().lean();
     if (!contractData || contractData.length == 0) {
       throw new NotFoundException('Contracts data not found!');
     }
-    return contractData;
+    return contractData.map((contract) => this.processContract(contract));
   }
 
   async getContract(contractId: string): Promise<IContract> {
     const existingContract = await this.contractModel
       .findById(contractId)
+      .lean()
       .exec();
     if (!existingContract) {
       throw new NotFoundException(`Contract #${contractId} not found`);
     }
-    return existingContract;
+    return this.processContract(existingContract);
   }
 
   async deleteContract(contractId: string): Promise<IContract> {
@@ -61,4 +62,21 @@ export class ContractManagementService {
     }
     return deletedContract;
   }
+
+  private processContract(contract: any): any {
+    contract.milestoneAmount = contract.milestoneAmount.sort((a, b) => {
+      if (a.year === b.year) {
+        return a.revision - b.revision;
+      }
+      return a.year - b.year;
+    });
+
+    contract.milestoneAmount.forEach((milestone: any) => {
+      delete milestone._id;
+      delete milestone.month._id;
+    });
+
+    return contract;
+  }
 }
+
