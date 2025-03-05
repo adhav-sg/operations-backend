@@ -9,7 +9,7 @@ import { ContractManagementController } from './contractManagement/contractManag
 @Module({
   imports: [
     MongooseModule.forRoot(
-      'mongodb+srv://bpMCOps-prod:bpMCOps-prod@cluster0.0kpu3.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0',
+      
     ),
     MongooseModule.forFeature([{ name: 'Contract', schema: ContractSchema }]),
   ],
