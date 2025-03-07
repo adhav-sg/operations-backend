@@ -1,0 +1,130 @@
+{
+  "contracts": [
+    {
+      "bpSubPortfolio": "Test folio",
+      "contractName": "Contract66",
+      "contractType": "Type1",
+      "discountPercentage": "10%",
+      "teamType": "Team1",
+      "contractCurrency": "USD",
+      "contractFGID": "FGID1234567",
+      "referencePO": "PO123",
+      "contractProgram": "Program1",
+      "contractCSG": "CSG1",
+      "revenueType": "RevenueType1",
+      "contractStartDate": "2025-03-01",
+      "contractEndDate": "2026-03-01",
+      "POAmountOMS": "10000",
+      "POAmountFG": "20000",
+      "POAmountAriba": "30000",
+      "masterProjectCode": "MPC123",
+      "masterProjectCodePM": "MPCPM123",
+      "masterPU": "PU123",
+      "LOENumber": "LOE123",
+      "linkedDPSNumber": "DPS123",
+      "infosysContractType": "TypeA",
+      "totalSoWWorkers": "50",
+      "milestoneAmount": [
+        {
+          "revision": 1,
+          "year": 2025,
+          "month": {
+            "jan": "1000",
+            "feb": "2000",
+            "mar": "3000",
+            "apr": "4000",
+            "may": "5000",
+            "jun": "6000",
+            "jul": "7000",
+            "aug": "8000",
+            "sep": "9000",
+            "oct": "10000",
+            "nov": "11000",
+            "dec": "12000"
+          }
+        },
+        {
+          "revision": 2,
+          "year": 2026,
+          "month": {
+            "jan": "13000",
+            "feb": "14000",
+            "mar": "15000",
+            "apr": "16000",
+            "may": "17000",
+            "jun": "18000",
+            "jul": "19000",
+            "aug": "20000",
+            "sep": "21000",
+            "oct": "22000",
+            "nov": "23000",
+            "dec": "24000"
+          }
+        }
+      ]
+    },
+    {
+      "bpSubPortfolio": "Test folio",
+      "contractName": "Contract67",
+      "contractType": "Type1",
+      "discountPercentage": "10%",
+      "teamType": "Team1",
+      "contractCurrency": "USD",
+      "contractFGID": "FGID123456",
+      "referencePO": "PO123",
+      "contractProgram": "Program1",
+      "contractCSG": "CSG1",
+      "revenueType": "RevenueType1",
+      "contractStartDate": "2025-03-01",
+      "contractEndDate": "2026-03-01",
+      "POAmountOMS": "10000",
+      "POAmountFG": "20000",
+      "POAmountAriba": "30000",
+      "masterProjectCode": "MPC123",
+      "masterProjectCodePM": "MPCPM123",
+      "masterPU": "PU123",
+      "LOENumber": "LOE123",
+      "linkedDPSNumber": "DPS123",
+      "infosysContractType": "TypeA",
+      "totalSoWWorkers": "50",
+      "milestoneAmount": [
+        {
+          "revision": 1,
+          "year": 2025,
+          "month": {
+            "jan": "1000",
+            "feb": "2000",
+            "mar": "3000",
+            "apr": "4000",
+            "may": "5000",
+            "jun": "6000",
+            "jul": "7000",
+            "aug": "8000",
+            "sep": "9000",
+            "oct": "10000",
+            "nov": "11000",
+            "dec": "12000"
+          }
+        },
+        {
+          "revision": 2,
+          "year": 2026,
+          "month": {
+            "jan": "13000",
+            "feb": "14000",
+            "mar": "15000",
+            "apr": "16000",
+            "may": "17000",
+            "jun": "18000",
+            "jul": "19000",
+            "aug": "20000",
+            "sep": "21000",
+            "oct": "22000",
+            "nov": "23000",
+            "dec": "24000"
+          }
+        }
+      ]
+    }
+  ]
+}

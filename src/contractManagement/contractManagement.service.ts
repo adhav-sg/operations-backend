@@ -1,6 +1,6 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { CreateContractDto } from 'src/dto/create-contract.dto';
+import { CreateContractDto, BulkCreateContractDto } from 'src/dto/create-contract.dto';
 import { IContract } from 'src/interface/contract.interface';
 import { Model } from 'mongoose';
 import { UpdateContractDto } from 'src/dto/update-contract.dto';
@@ -14,8 +14,32 @@ export class ContractManagementService {
   async createContract(
     createContractDto: CreateContractDto,
   ): Promise<IContract> {
+    const existingContract = await this.contractModel.findOne({ contractFGID: createContractDto.contractFGID });
+    if (existingContract) {
+      throw new BadRequestException(`Contract with FGID ${createContractDto.contractFGID} already exists`);
+    }
     const newContract = new this.contractModel(createContractDto);
     return newContract.save();
+  }
+
+  async bulkCreateContracts(
+    bulkCreateContractDto: BulkCreateContractDto,
+  ): Promise<IContract[]> {
+    if (!bulkCreateContractDto.contracts || !Array.isArray(bulkCreateContractDto.contracts)) {
+      throw new BadRequestException('Invalid input: contracts should be an array');
+    }
+
+    const contractFGIDs = bulkCreateContractDto.contracts.map(contract => contract.contractFGID);
+    const existingContracts = await this.contractModel.find({ contractFGID: { $in: contractFGIDs } });
+    const existingFGIDs = existingContracts.map(contract => contract.contractFGID);
+
+    const duplicates = contractFGIDs.filter((fgid, index) => contractFGIDs.indexOf(fgid) !== index || existingFGIDs.includes(fgid));
+    if (duplicates.length > 0) {
+      throw new BadRequestException(`Duplicate contractFGID(s) found: ${duplicates.join(', ')}`);
+    }
+
+    const newContracts = await this.contractModel.insertMany(bulkCreateContractDto.contracts);
+    return newContracts.map(contract => contract.toObject() as IContract);
   }
 
   async updateContractByFGID(
@@ -79,4 +103,3 @@ export class ContractManagementService {
     return contract;
   }
 }
-

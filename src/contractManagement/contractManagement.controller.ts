@@ -9,7 +9,7 @@ import {
   Put,
   Res,
 } from '@nestjs/common';
-import { CreateContractDto } from 'src/dto/create-contract.dto';
+import { CreateContractDto, BulkCreateContractDto } from 'src/dto/create-contract.dto';
 import { UpdateContractDto } from 'src/dto/update-contract.dto';
 import { ContractManagementService } from './contractManagement.service';
 
@@ -32,7 +32,28 @@ export class ContractManagementController {
     } catch (err) {
       return response.status(HttpStatus.BAD_REQUEST).json({
         statusCode: 400,
-        message: 'Error: Contract not created!',
+        message: err.message,
+        error: 'Bad Request',
+      });
+    }
+  }
+
+  @Post('/bulk')
+  async bulkCreateContracts(
+    @Res() response,
+    @Body() bulkCreateContractDto: BulkCreateContractDto,
+  ) {
+    try {
+      const newContracts =
+        await this.contractService.bulkCreateContracts(bulkCreateContractDto);
+      return response.status(HttpStatus.CREATED).json({
+        message: 'Contracts have been created successfully',
+        newContracts,
+      });
+    } catch (err) {
+      return response.status(HttpStatus.BAD_REQUEST).json({
+        statusCode: 400,
+        message: err.message,
         error: 'Bad Request',
       });
     }
@@ -107,11 +128,7 @@ export class ContractManagementController {
         deletedContract,
       });
     } catch (err) {
-      return response.status(HttpStatus.INTERNAL_SERVER_ERROR).json({
-        statusCode: err.status || HttpStatus.INTERNAL_SERVER_ERROR,
-        message: err.message || 'Internal server error',
-        error: err.name || 'Error',
-      });
+      return response.status(err.status).json(err.response);
     }
   }
 }

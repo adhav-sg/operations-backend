@@ -1,4 +1,4 @@
-import { IsNotEmpty, IsNumber, IsString, ValidateNested } from 'class-validator';
+import { IsNotEmpty, IsNumber, IsOptional, IsString, ValidateNested } from 'class-validator';
 import { Type } from 'class-transformer';
 
 class MonthDto {
@@ -85,8 +85,8 @@ export class CreateContractDto {
   readonly referencePO: string;
 
   @IsString()
-  @IsNotEmpty()
-  readonly PORevision: string;
+  @IsOptional()
+  readonly PORevision?: string;
 
   @IsString()
   @IsNotEmpty()
@@ -145,4 +145,10 @@ export class CreateContractDto {
   @ValidateNested({ each: true })
   @Type(() => MilestoneAmountDto)
   readonly milestoneAmount: MilestoneAmountDto[];
+}
+
+export class BulkCreateContractDto {
+  @ValidateNested({ each: true })
+  @Type(() => CreateContractDto)
+  readonly contracts: CreateContractDto[];
 }
