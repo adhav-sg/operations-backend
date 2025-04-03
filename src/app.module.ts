@@ -1,4 +1,3 @@
-// filepath: [app.module.ts](http://_vscodecontentref_/0)
 import { Module } from '@nestjs/common';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';

@@ -1,4 +1,10 @@
-import { IsNotEmpty, IsNumber, IsOptional, IsString, ValidateNested } from 'class-validator';
+import {
+  IsNotEmpty,
+  IsNumber,
+  IsOptional,
+  IsString,
+  ValidateNested,
+} from 'class-validator';
 import { Type } from 'class-transformer';
 
 class MonthDto {
@@ -87,7 +93,12 @@ export class CreateContractDto {
   @IsString()
   @IsOptional()
   readonly PORevision?: string;
-
+  @IsString()
+  @IsOptional()
+  readonly __v?: string;
+  @IsString()
+  @IsOptional()
+  readonly _id?: string;
   @IsString()
   @IsNotEmpty()
   readonly contractProgram: string;

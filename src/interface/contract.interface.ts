@@ -30,7 +30,7 @@ export interface IContract extends Document {
   readonly contractCurrency: string;
   readonly contractFGID: string;
   readonly referencePO: string;
-  readonly PORevision?: string; // Make PORevision optional
+  readonly PORevision?: string;
   readonly contractProgram: string;
   readonly contractCSG: string;
   readonly revenueType: string;

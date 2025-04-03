@@ -1,6 +1,13 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  BadRequestException,
+} from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { CreateContractDto } from 'src/dto/create-contract.dto';
+import {
+  CreateContractDto,
+  BulkCreateContractDto,
+} from 'src/dto/create-contract.dto';
 import { IContract } from 'src/interface/contract.interface';
 import { Model } from 'mongoose';
 import { UpdateContractDto } from 'src/dto/update-contract.dto';
@@ -14,41 +21,248 @@ export class ContractManagementService {
   async createContract(
     createContractDto: CreateContractDto,
   ): Promise<IContract> {
+    const existingContract = await this.contractModel.findOne({
+      contractFGID: createContractDto.contractFGID,
+    });
+    if (existingContract) {
+      throw new BadRequestException(
+        `Contract with FGID ${createContractDto.contractFGID} already exists`,
+      );
+    }
     const newContract = new this.contractModel(createContractDto);
     return newContract.save();
   }
+  async bulkAddEditContracts(
+    bulkCreateContractDto: BulkCreateContractDto,
+  ): Promise<{
+    added: IContract[];
+    updated: {
+      contractFGID: string;
+      contractName: string;
+      updatedFields: Record<string, any>;
+    }[];
+  }> {
+    if (
+      !bulkCreateContractDto.contracts ||
+      !Array.isArray(bulkCreateContractDto.contracts)
+    ) {
+      throw new BadRequestException(
+        'Invalid input: contracts should be an array',
+      );
+    }
 
-  async updateContract(
-    contractId: string,
+    const addedContracts: IContract[] = [];
+    const updatedContracts: {
+      contractFGID: string;
+      contractName: string;
+      updatedFields: Record<string, any>;
+    }[] = [];
+
+    for (const contractDto of bulkCreateContractDto.contracts) {
+      const existingContract = await this.contractModel.findOne({
+        contractFGID: contractDto.contractFGID,
+      });
+
+      if (existingContract) {
+        // Remove immutable fields (_id, __v) from the payload
+        const { _id, __v, ...updatableFields } = contractDto;
+
+        // Normalize and sort milestoneAmount for comparison
+        const normalizedIncomingMilestoneAmount = this.normalizeMilestoneAmount(
+          updatableFields.milestoneAmount,
+        );
+        const normalizedExistingMilestoneAmount = this.normalizeMilestoneAmount(
+          existingContract.milestoneAmount,
+        );
+
+        // Detect changes between the existing contract and the incoming payload
+        const updatedFields: Record<string, any> = {};
+        Object.keys(updatableFields).forEach((key) => {
+          if (
+            key === 'milestoneAmount' &&
+            !this.deepEqual(
+              normalizedExistingMilestoneAmount,
+              normalizedIncomingMilestoneAmount,
+            )
+          ) {
+            updatedFields[key] = normalizedIncomingMilestoneAmount;
+          } else if (
+            key !== 'milestoneAmount' &&
+            !this.deepEqual(existingContract[key], updatableFields[key])
+          ) {
+            updatedFields[key] = updatableFields[key];
+          }
+        });
+
+        if (Object.keys(updatedFields).length > 0) {
+          // Update the existing contract only if there are changes
+          await this.contractModel.findOneAndUpdate(
+            { contractFGID: contractDto.contractFGID },
+            updatedFields,
+            { new: true },
+          );
+
+          // Add the updated contract details to the response
+          updatedContracts.push({
+            contractFGID: existingContract.contractFGID,
+            contractName: existingContract.contractName,
+            updatedFields,
+          });
+        }
+      } else {
+        // Add a new contract
+        const newContract = new this.contractModel(contractDto);
+        const savedContract = await newContract.save();
+
+        // Process the new contract to remove `_id` and other unnecessary fields
+        addedContracts.push(this.processContract(savedContract.toObject()));
+      }
+    }
+
+    return { added: addedContracts, updated: updatedContracts };
+  }
+
+  private normalizeMilestoneAmount(milestoneAmount: any[]): any[] {
+    return milestoneAmount
+      .map((milestone) => {
+        const { _id, ...normalizedMilestone } = milestone;
+
+        // Sort the month object keys
+        if (normalizedMilestone.month) {
+          const sortedMonth = Object.keys(normalizedMilestone.month)
+            .sort()
+            .reduce((acc, key) => {
+              if (key !== '_id') {
+                acc[key] =
+                  normalizedMilestone.month[key]?.replace(/[$,]/g, '') || ''; // Remove formatting like "$" or ","
+              }
+              return acc;
+            }, {});
+          normalizedMilestone.month = sortedMonth;
+        }
+
+        return normalizedMilestone;
+      })
+      .sort((a, b) => {
+        if (a.year === b.year) {
+          return a.revision - b.revision;
+        }
+        return a.year - b.year;
+      });
+  }
+
+  private deepEqual(obj1: any, obj2: any): boolean {
+    if (obj1 === obj2) return true;
+
+    if (
+      typeof obj1 === 'object' &&
+      obj1 !== null &&
+      typeof obj2 === 'object' &&
+      obj2 !== null
+    ) {
+      const keys1 = Object.keys(obj1);
+      const keys2 = Object.keys(obj2);
+
+      if (keys1.length !== keys2.length) return false;
+
+      for (const key of keys1) {
+        if (!this.deepEqual(obj1[key], obj2[key])) return false;
+      }
+
+      return true;
+    }
+
+    return false;
+  }
+  // private processContract(contract: any): any {
+  //   // Remove `_id` and `month._id` from milestoneAmount
+  //   if (contract.milestoneAmount) {
+  //     contract.milestoneAmount = contract.milestoneAmount.map((milestone: any) => {
+  //       const { _id, ...milestoneWithoutId } = milestone;
+  //       if (milestoneWithoutId.month) {
+  //         const { _id: monthId, ...monthWithoutId } = milestoneWithoutId.month;
+  //         milestoneWithoutId.month = monthWithoutId;
+  //       }
+  //       return milestoneWithoutId;
+  //     });
+  //   }
+
+  //   return contract;
+  // }
+
+  // Removed duplicate processContract method
+  async bulkCreateContracts(
+    bulkCreateContractDto: BulkCreateContractDto,
+  ): Promise<IContract[]> {
+    if (
+      !bulkCreateContractDto.contracts ||
+      !Array.isArray(bulkCreateContractDto.contracts)
+    ) {
+      throw new BadRequestException(
+        'Invalid input: contracts should be an array',
+      );
+    }
+
+    const contractFGIDs = bulkCreateContractDto.contracts.map(
+      (contract) => contract.contractFGID,
+    );
+    const existingContracts = await this.contractModel.find({
+      contractFGID: { $in: contractFGIDs },
+    });
+    const existingFGIDs = existingContracts.map(
+      (contract) => contract.contractFGID,
+    );
+
+    const duplicates = contractFGIDs.filter(
+      (fgid, index) =>
+        contractFGIDs.indexOf(fgid) !== index || existingFGIDs.includes(fgid),
+    );
+    if (duplicates.length > 0) {
+      throw new BadRequestException(
+        `Duplicate contractFGID(s) found: ${duplicates.join(', ')}`,
+      );
+    }
+
+    const newContracts = await this.contractModel.insertMany(
+      bulkCreateContractDto.contracts,
+    );
+    return newContracts.map((contract) => contract.toObject() as IContract);
+  }
+
+  async updateContractByFGID(
+    contractFGID: string,
     updateContractDto: UpdateContractDto,
   ): Promise<IContract> {
-    const existingContract = await this.contractModel.findByIdAndUpdate(
-      contractId,
+    const existingContract = await this.contractModel.findOneAndUpdate(
+      { contractFGID },
       updateContractDto,
       { new: true },
     );
     if (!existingContract) {
-      throw new NotFoundException(`Contract #${contractId} not found`);
+      throw new NotFoundException(
+        `Contract with FGID #${contractFGID} not found`,
+      );
     }
     return existingContract;
   }
 
   async getAllContracts(): Promise<IContract[]> {
-    const contractData = await this.contractModel.find();
+    const contractData = await this.contractModel.find().lean();
     if (!contractData || contractData.length == 0) {
       throw new NotFoundException('Contracts data not found!');
     }
-    return contractData;
+    return contractData.map((contract) => this.processContract(contract));
   }
 
   async getContract(contractId: string): Promise<IContract> {
     const existingContract = await this.contractModel
       .findById(contractId)
+      .lean()
       .exec();
     if (!existingContract) {
       throw new NotFoundException(`Contract #${contractId} not found`);
     }
-    return existingContract;
+    return this.processContract(existingContract);
   }
 
   async deleteContract(contractId: string): Promise<IContract> {
@@ -58,5 +272,21 @@ export class ContractManagementService {
       throw new NotFoundException(`Contract #${contractId} not found`);
     }
     return deletedContract;
+  }
+
+  private processContract(contract: any): any {
+    contract.milestoneAmount = contract.milestoneAmount.sort((a, b) => {
+      if (a.year === b.year) {
+        return a.revision - b.revision;
+      }
+      return a.year - b.year;
+    });
+
+    contract.milestoneAmount.forEach((milestone: any) => {
+      delete milestone._id;
+      delete milestone.month._id;
+    });
+
+    return contract;
   }
 }

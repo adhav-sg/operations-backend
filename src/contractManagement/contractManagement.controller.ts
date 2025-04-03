@@ -9,7 +9,10 @@ import {
   Put,
   Res,
 } from '@nestjs/common';
-import { CreateContractDto, BulkCreateContractDto } from 'src/dto/create-contract.dto';
+import {
+  CreateContractDto,
+  BulkCreateContractDto,
+} from 'src/dto/create-contract.dto';
 import { UpdateContractDto } from 'src/dto/update-contract.dto';
 import { ContractManagementService } from './contractManagement.service';
 
@@ -37,15 +40,33 @@ export class ContractManagementController {
       });
     }
   }
-
+  @Post('/bulk-add-edit')
+  async bulkAddEditContracts(
+    @Res() response,
+    @Body() bulkCreateContractDto: BulkCreateContractDto,
+  ) {
+    try {
+      await this.contractService.bulkAddEditContracts(bulkCreateContractDto);
+      return response.status(HttpStatus.OK).json({
+        message: 'Contracts processed successfully',
+      });
+    } catch (err) {
+      return response.status(HttpStatus.BAD_REQUEST).json({
+        statusCode: 400,
+        message: err.message,
+        error: 'Bad Request',
+      });
+    }
+  }
   @Post('/bulk')
   async bulkCreateContracts(
     @Res() response,
     @Body() bulkCreateContractDto: BulkCreateContractDto,
   ) {
     try {
-      const newContracts =
-        await this.contractService.bulkCreateContracts(bulkCreateContractDto);
+      const newContracts = await this.contractService.bulkCreateContracts(
+        bulkCreateContractDto,
+      );
       return response.status(HttpStatus.CREATED).json({
         message: 'Contracts have been created successfully',
         newContracts,
